@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simple Weather PWA</title>
+    <link rel="manifest" href="./manifest.json">
+    <!-- Updated theme color to match the new header -->
+    <meta name="theme-color" content="#2C365E">
+    
+    <style>
+        /* Color Theme Variables */
+        :root {
+            --color-main: #2B193D;
+            --color-side: #2C365E;
+            --color-warning: #C5979D;
+            --color-text-light: #FFFFFF;
+            --color-text-dark: #000000;
+        }
+
+        /* Base Mobile-First Styles */
+        body { 
+            font-family: system-ui, -apple-system, sans-serif; 
+            background-color: var(--color-main);
+            color: var(--color-text-light);
+            margin: 0; 
+            padding: 0; 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        * { box-sizing: border-box; }
+
+        /* App Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-side);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .refresh-btn {
+            background-color: transparent;
+            color: var(--color-text-light);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .refresh-btn:active {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Layout */
+        main {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Primary Action Button (Initial Load) */
+        .primary-btn { 
+            background-color: var(--color-side); 
+            color: var(--color-text-light); 
+            border: 1px solid rgba(255,255,255,0.2); 
+            padding: 16px 24px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            font-size: 1.1rem; 
+            font-weight: bold;
+            width: 100%;
+            margin-top: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Section Cards */
+        .section-card {
+            background-color: var(--color-side);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .section-card h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+
+        /* Alerts Styling */
+        .alert { 
+            background-color: var(--color-warning); 
+            color: var(--color-text-dark); 
+            padding: 16px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .alert strong {
+            display: block;
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        /* Horizontal Hourly Scroller */
+        .forecast-scroller { 
+            display: flex; 
+            overflow-x: auto; 
+            gap: 12px; 
+            padding-bottom: 8px;
+            /* Hide scrollbar for cleaner mobile look */
+            scrollbar-width: none; 
+        }
+        .forecast-scroller::-webkit-scrollbar { display: none; }
+
+        .hourly-card { 
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px; 
+            border-radius: 12px; 
+            min-width: 85px; 
+            text-align: center; 
+            flex-shrink: 0; 
+        }
+
+        .hourly-card img {
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            margin: 8px 0;
+        }
+
+        /* Vertical Daily List */
+        .daily-row { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 12px 0; 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+
+        .daily-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .daily-row img { 
+            border-radius: 50%; 
+            width: 44px; 
+            height: 44px;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    
+    <header>
+        <h1>Simple Weather</h1>
+        <button id="refreshBtn" class="refresh-btn hidden">Refresh</button>
+    </header>
+    
+    <main>
+        <button id="getLocationBtn" class="primary-btn">Load My Weather</button>
+        
+        <div id="weather-container" class="hidden">
+            <div id="alerts-container"></div>
+            
+            <div class="section-card">
+                <h2>Next 24 Hours</h2>
+                <div id="hourly-container" class="forecast-scroller"></div>
+            </div>
+            
+            <div class="section-card">
+                <h2>7-Day Forecast</h2>
+                <div id="daily-container"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="./app.js"></script>
+</body>
+</html>
