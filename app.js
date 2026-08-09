@@ -11,6 +11,7 @@ const weatherContainer = document.getElementById('weather-container');
 const alertsContainer = document.getElementById('alerts-container');
 const hourlyContainer = document.getElementById('hourly-container');
 const dailyContainer = document.getElementById('daily-container');
+const testAlertBtn = document.getElementById('testAlertBtn');
 
 // Map instance
 let map = null;
@@ -71,6 +72,30 @@ searchBtn.addEventListener('click', async () => {
     } finally {
         searchBtn.textContent = 'Search';
     }
+});
+
+testAlertBtn.addEventListener('click', () => {
+    // Unhide the main container so you can see the results immediately
+    weatherContainer.classList.remove('hidden');
+    
+    // Create a mock NWS alert payload
+    const mockAlertData = [
+        {
+            properties: {
+                event: "Tornado Warning",
+                headline: "Tornado Warning issued August 08 at 10:17 PM EDT until August 08 at 11:00 PM EDT by NWS."
+            }
+        },
+        {
+            properties: {
+                event: "Severe Thunderstorm Watch",
+                headline: "Severe Thunderstorm Watch issued August 08 at 9:00 PM EDT until August 09 at 2:00 AM EDT by NWS."
+            }
+        }
+    ];
+
+    // Pass the mock data to your existing render function
+    renderAlerts(mockAlertData);
 });
 
 // 3. Core Data Fetching Function
