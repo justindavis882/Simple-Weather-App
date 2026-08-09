@@ -418,3 +418,6 @@ async function fetchTides(lat, lon) {
         tidesContainer.classList.add('hidden'); // Fail silently so it doesn't break the weather app
     }
 }
+
+// Automatically update the footer copyright year
+document.getElementById('current-year').textContent = new Date().getFullYear();

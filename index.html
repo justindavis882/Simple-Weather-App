@@ -258,6 +258,33 @@
         .tide-type { font-weight: bold; font-size: 1.1rem; color: var(--color-text-light); }
         .tide-time { color: rgba(255, 255, 255, 0.8); }
         .tide-height { font-weight: bold; color: var(--color-warning); }
+
+        /* Footer Styles */
+        footer {
+            text-align: center;
+            padding: 24px 20px;
+            margin-top: 40px;
+            background-color: var(--color-side);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        footer a {
+            color: var(--color-text-light);
+            text-decoration: underline;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        footer a:hover {
+            color: var(--color-warning);
+        }
+
+        footer p {
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -311,6 +338,11 @@
             </div>
         </div>
     </main>
+
+    <footer>
+        <p>&copy; <span id="current-year"></span> <a href="https://justindavis882.github.io/OllyDavisPortfolio" target="_blank" rel="noopener noreferrer">Olly Davis</a>. All rights reserved.</p>
+        <p>Weather and ocean data compiled from NOAA and National Weather Service sources.</p>
+    </footer>
 
     <script src="./app.js"></script>
 </body>

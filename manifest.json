@@ -1,5 +1,5 @@
 {
-  "name": "Local Weather PWA",
+  "name": "Simple Weather App",
   "short_name": "Weather",
   "description": "Hourly and daily weather forecasts utilizing the NWS API.",
   "start_url": "./index.html",
