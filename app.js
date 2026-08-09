@@ -82,14 +82,8 @@ testAlertBtn.addEventListener('click', () => {
     const mockAlertData = [
         {
             properties: {
-                event: "Tornado Warning",
-                headline: "Tornado Warning issued August 08 at 10:17 PM EDT until August 08 at 11:00 PM EDT by NWS."
-            }
-        },
-        {
-            properties: {
-                event: "Severe Thunderstorm Watch",
-                headline: "Severe Thunderstorm Watch issued August 08 at 9:00 PM EDT until August 09 at 2:00 AM EDT by NWS."
+                event: "Test Warning",
+                headline: "All Weather Alerts will appear in this format. Please read all warnings and stay safe."
             }
         }
     ];
