@@ -1,16 +1,21 @@
 // The NWS requires a descriptive User-Agent header
-const APP_IDENTIFIER = 'SimpleWeatherPWA/1.0 (justindavis882@gmail.com)';
+const APP_IDENTIFIER = 'SimpleWeatherPWA/1.0 (your-email@example.com)';
 const headers = { 'User-Agent': APP_IDENTIFIER };
 
 // DOM Elements
 const getLocBtn = document.getElementById('getLocationBtn');
 const refreshBtn = document.getElementById('refreshBtn');
+const searchBtn = document.getElementById('searchBtn');
+const locationInput = document.getElementById('locationInput');
 const weatherContainer = document.getElementById('weather-container');
 const alertsContainer = document.getElementById('alerts-container');
 const hourlyContainer = document.getElementById('hourly-container');
 const dailyContainer = document.getElementById('daily-container');
 
-// 1. Register the Service Worker (for PWA offline support and caching)
+// Map instance
+let map = null;
+
+// 1. Register the Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
@@ -18,7 +23,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// 2. Handle Geolocation & Refresh Actions
+// 2. Event Listeners for Location Data
 getLocBtn.addEventListener('click', () => {
     if (!navigator.geolocation) {
         alert('Geolocation is not supported by your browser');
@@ -33,6 +38,33 @@ refreshBtn.addEventListener('click', () => {
     navigator.geolocation.getCurrentPosition(fetchWeatherData, handleLocationError);
 });
 
+searchBtn.addEventListener('click', async () => {
+    const query = locationInput.value.trim();
+    if (!query) return;
+    
+    searchBtn.textContent = '...';
+    try {
+        // Use the US Census Bureau Geocoder API
+        const response = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(query)}&benchmark=2020&format=json`);
+        const data = await response.json();
+        
+        if (data.result.addressMatches.length > 0) {
+            const coords = data.result.addressMatches[0].coordinates;
+            // Create a mock position object to feed into the NWS function
+            const position = { coords: { latitude: coords.y, longitude: coords.x } };
+            fetchWeatherData(position);
+        } else {
+            alert('Location not found. Try "City, State".');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error searching for location.');
+    } finally {
+        searchBtn.textContent = 'Search';
+    }
+});
+
+// 3. Core Data Fetching Function
 async function fetchWeatherData(position) {
     const lat = position.coords.latitude.toFixed(4);
     const lon = position.coords.longitude.toFixed(4);
@@ -43,7 +75,6 @@ async function fetchWeatherData(position) {
         if (!pointRes.ok) throw new Error('Failed to fetch gridpoint data');
         const pointData = await pointRes.json();
         
-        // Extract the specific forecast URLs provided by the NWS for this grid
         const { forecast, forecastHourly } = pointData.properties;
 
         // Step 2: Fetch Forecasts and Alerts concurrently
@@ -61,20 +92,21 @@ async function fetchWeatherData(position) {
         getLocBtn.classList.add('hidden');
         weatherContainer.classList.remove('hidden');
         
-        // Show and reset the refresh button in the header
         refreshBtn.classList.remove('hidden');
-        refreshBtn.textContent = 'Refresh';    
+        refreshBtn.textContent = 'GPS';    
 
         renderAlerts(alertsData.features);
-        // Slice the first 24 periods for the hourly view
         renderHourly(hourlyData.properties.periods.slice(0, 24)); 
         renderDaily(dailyData.properties.periods);
+        
+        // Step 4: Render/Update the Live Radar
+        updateRadar(lat, lon);
 
     } catch (error) {
         console.error(error);
         alert('Error communicating with the National Weather Service.');
         getLocBtn.textContent = 'Try Again';
-        refreshBtn.textContent = 'Refresh';
+        refreshBtn.textContent = 'GPS';
     }
 }
 
@@ -82,73 +114,10 @@ function handleLocationError(error) {
     console.error(error);
     alert('Unable to retrieve your location. Please check your permissions.');
     getLocBtn.textContent = 'Load My Weather';
-    refreshBtn.textContent = 'Refresh';
+    refreshBtn.textContent = 'GPS';
 }
 
-// --- New DOM Elements ---
-const searchBtn = document.getElementById('searchBtn');
-const locationInput = document.getElementById('locationInput');
-let map = null; // Store the radar map instance
-
-// --- 1. The Census Geocoder Search ---
-searchBtn.addEventListener('click', async () => {
-    const query = locationInput.value.trim();
-    if (!query) return;
-    
-    searchBtn.textContent = '...';
-    try {
-        // Call the US Census Bureau Geocoder API
-        const response = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(query)}&benchmark=2020&format=json`);
-        const data = await response.json();
-        
-        if (data.result.addressMatches.length > 0) {
-            // Extract the coordinates of the first match
-            const coords = data.result.addressMatches[0].coordinates;
-            // Create a mock position object to feed into our existing NWS function
-            const position = { coords: { latitude: coords.y, longitude: coords.x } };
-            
-            // Pass the Census coordinates to the NWS API
-            fetchWeatherData(position);
-        } else {
-            alert('Location not found. Try "City, State".');
-        }
-    } catch (err) {
-        console.error(err);
-        alert('Error searching for location.');
-    } finally {
-        searchBtn.textContent = 'Search';
-    }
-});
-
-// --- 2. The NOAA Radar Initialization ---
-// Call this function inside your existing fetchWeatherData() function at the very end
-function updateRadar(lat, lon) {
-    if (!map) {
-        // Initialize the map if it doesn't exist yet
-        map = L.map('radar-map').setView([lat, lon], 7);
-        
-        // Add a basic street map underneath the radar
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap',
-            className: 'map-base-layer'
-        }).addTo(map);
-
-        // Add the official NOAA MRMS Base Reflectivity WMS Layer on top
-        L.tileLayer.wms('https://mapservices.weather.noaa.gov/eventdriven/services/radar/radar_base_reflectivity/MapServer/WMSServer', {
-            layers: '0', 
-            format: 'image/png',
-            transparent: true,
-            opacity: 0.65, // Slightly see-through so streets remain visible
-            attribution: 'NOAA / NWS'
-        }).addTo(map);
-    } else {
-        // If the map already exists, just pan to the new searched location
-        map.setView([lat, lon], 7);
-    }
-}
-
-// --- UI Rendering Functions ---
-
+// 4. UI Rendering Functions
 function renderAlerts(alerts) {
     alertsContainer.innerHTML = '';
     if (!alerts || alerts.length === 0) return;
@@ -163,7 +132,6 @@ function renderAlerts(alerts) {
 
 function renderHourly(periods) {
     hourlyContainer.innerHTML = periods.map(period => {
-        // Convert startTime to a readable hour
         const timeString = new Date(period.startTime).toLocaleTimeString([], { hour: 'numeric' });
         return `
             <div class="hourly-card">
@@ -191,4 +159,35 @@ function renderDaily(periods) {
             </div>
         </div>
     `).join('');
-          }
+}
+
+function updateRadar(lat, lon) {
+    if (!map) {
+        // Initialize the map
+        map = L.map('radar-map').setView([lat, lon], 7);
+        
+        // Base street layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            className: 'map-base-layer'
+        }).addTo(map);
+
+        // NOAA Radar layer
+        L.tileLayer.wms('https://mapservices.weather.noaa.gov/eventdriven/services/radar/radar_base_reflectivity/MapServer/WMSServer', {
+            layers: '0', 
+            format: 'image/png',
+            transparent: true,
+            opacity: 0.65,
+            attribution: 'NOAA / NWS'
+        }).addTo(map);
+
+    } else {
+        // Update existing map location
+        map.setView([lat, lon], 7);
+    }
+    
+    // CRITICAL FIX: Tell Leaflet the container size has changed since it was originally hidden
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 100);
+}
