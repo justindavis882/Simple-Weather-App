@@ -13,6 +13,44 @@ const hourlyContainer = document.getElementById('hourly-container');
 const dailyContainer = document.getElementById('daily-container');
 const testAlertBtn = document.getElementById('testAlertBtn');
 
+// Initialize saved locations from local storage
+let savedLocations = JSON.parse(localStorage.getItem('weather_saved_locations')) || [];
+
+function renderSavedLocations() {
+    const container = document.getElementById('saved-locations-container');
+    if (savedLocations.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = savedLocations.map(loc => `
+        <button class="saved-chip" onclick="loadSavedLocation(${loc.lat}, ${loc.lon})">
+            ${loc.name}
+        </button>
+    `).join('');
+}
+
+// Global function so the inline onclick handler can reach it
+window.loadSavedLocation = (lat, lon) => {
+    const position = { coords: { latitude: lat, longitude: lon } };
+    fetchWeatherData(position);
+};
+
+// Global function to save a new location
+window.saveCurrentLocation = (name, lat, lon) => {
+    if (!savedLocations.find(loc => loc.name === name)) {
+        savedLocations.push({ name, lat, lon });
+        localStorage.setItem('weather_saved_locations', JSON.stringify(savedLocations));
+        renderSavedLocations();
+        alert(`${name} saved!`);
+    } else {
+        alert(`${name} is already saved.`);
+    }
+};
+
+// Render chips on initial load
+renderSavedLocations();
+
 // Map instance
 let map = null;
 
@@ -104,6 +142,11 @@ async function fetchWeatherData(position) {
         const pointData = await pointRes.json();
         
         const { forecast, forecastHourly } = pointData.properties;
+        
+        // NEW: Extract the City and State from the NWS data
+        const city = pointData.properties.relativeLocation.properties.city;
+        const state = pointData.properties.relativeLocation.properties.state;
+        const locationName = `${city}, ${state}`;
 
         // Step 2: Fetch Forecasts and Alerts concurrently
         const [dailyRes, hourlyRes, alertsRes] = await Promise.all([
@@ -125,8 +168,8 @@ async function fetchWeatherData(position) {
 
         renderAlerts(alertsData.features);
         
-        // NEW: Grab the very first period from the daily forecast (Current conditions)
-        renderCurrentWeather(dailyData.properties.periods[0]);
+        // NEW: Pass the location name and coordinates to the current weather card
+        renderCurrentWeather(dailyData.properties.periods[0], locationName, lat, lon);
         
         renderHourly(hourlyData.properties.periods.slice(0, 24)); 
         renderDaily(dailyData.properties.periods);
@@ -225,12 +268,21 @@ function updateRadar(lat, lon) {
     }, 100);
 }
 
-function renderCurrentWeather(period) {
+function renderCurrentWeather(period, locationName, lat, lon) {
     const currentContainer = document.getElementById('current-weather-container');
     
     currentContainer.innerHTML = `
-        <h2 style="margin-bottom: 8px;">${period.name}</h2>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div>
+                <h2 style="margin: 0; border-bottom: none; padding-bottom: 0;">${locationName}</h2>
+                <div style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">${period.name}</div>
+            </div>
+            <button class="save-loc-btn" onclick="saveCurrentLocation('${locationName}', ${lat}, ${lon})">
+                ⭐ Save
+            </button>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 16px;">
             <div>
                 <div style="font-size: 3.5rem; font-weight: bold; line-height: 1;">${period.temperature}&deg;${period.temperatureUnit}</div>
                 <div style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.8); margin-top: 8px;">${period.shortForecast}</div>

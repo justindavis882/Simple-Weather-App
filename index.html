@@ -209,6 +209,42 @@
         .close-alert:active {
             background: rgba(0, 0, 0, 0.25);
         }
+
+        /* Saved Location Chips */
+        .saved-locations-scroller {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 16px;
+            scrollbar-width: none;
+        }
+        .saved-locations-scroller::-webkit-scrollbar { display: none; }
+
+        .saved-chip {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--color-text-light);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .saved-chip:active { background-color: rgba(255, 255, 255, 0.2); }
+
+        /* Save Button on Current Weather Card */
+        .save-loc-btn {
+            background: transparent;
+            border: 1px solid var(--color-warning);
+            color: var(--color-warning);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .save-loc-btn:active { background: rgba(197, 151, 157, 0.2); }
     </style>
 </head>
 <body>
@@ -226,8 +262,11 @@
     </header>
         
     <main>
+        <!-- NEW: Saved Locations Container -->
+        <div id="saved-locations-container" class="saved-locations-scroller"></div>
+        
         <button id="getLocationBtn" class="primary-btn">Load My Weather</button>
-
+        
         <div id="weather-container" class="hidden">
             <!-- Alerts -->
             <div id="alerts-container"></div>
