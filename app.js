@@ -44,17 +44,26 @@ searchBtn.addEventListener('click', async () => {
     
     searchBtn.textContent = '...';
     try {
-        // Use the US Census Bureau Geocoder API
-        const response = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(query)}&benchmark=2020&format=json`);
+        // Swap to OpenStreetMap (Nominatim) Geocoder to resolve CORS blocking
+        // Nominatim requires a User-Agent just like NWS, so we reuse your APP_IDENTIFIER
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`, {
+            headers: { 'User-Agent': APP_IDENTIFIER }
+        });
+        
         const data = await response.json();
         
-        if (data.result.addressMatches.length > 0) {
-            const coords = data.result.addressMatches[0].coordinates;
-            // Create a mock position object to feed into the NWS function
-            const position = { coords: { latitude: coords.y, longitude: coords.x } };
+        if (data.length > 0) {
+            // Nominatim returns lat and lon as strings in the first array item
+            const coords = data[0];
+            const position = { 
+                coords: { 
+                    latitude: parseFloat(coords.lat), 
+                    longitude: parseFloat(coords.lon) 
+                } 
+            };
             fetchWeatherData(position);
         } else {
-            alert('Location not found. Try "City, State".');
+            alert('Location not found. Try a valid zip code or "City, State".');
         }
     } catch (err) {
         console.error(err);
