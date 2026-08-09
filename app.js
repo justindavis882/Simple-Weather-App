@@ -85,6 +85,68 @@ function handleLocationError(error) {
     refreshBtn.textContent = 'Refresh';
 }
 
+// --- New DOM Elements ---
+const searchBtn = document.getElementById('searchBtn');
+const locationInput = document.getElementById('locationInput');
+let map = null; // Store the radar map instance
+
+// --- 1. The Census Geocoder Search ---
+searchBtn.addEventListener('click', async () => {
+    const query = locationInput.value.trim();
+    if (!query) return;
+    
+    searchBtn.textContent = '...';
+    try {
+        // Call the US Census Bureau Geocoder API
+        const response = await fetch(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(query)}&benchmark=2020&format=json`);
+        const data = await response.json();
+        
+        if (data.result.addressMatches.length > 0) {
+            // Extract the coordinates of the first match
+            const coords = data.result.addressMatches[0].coordinates;
+            // Create a mock position object to feed into our existing NWS function
+            const position = { coords: { latitude: coords.y, longitude: coords.x } };
+            
+            // Pass the Census coordinates to the NWS API
+            fetchWeatherData(position);
+        } else {
+            alert('Location not found. Try "City, State".');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error searching for location.');
+    } finally {
+        searchBtn.textContent = 'Search';
+    }
+});
+
+// --- 2. The NOAA Radar Initialization ---
+// Call this function inside your existing fetchWeatherData() function at the very end
+function updateRadar(lat, lon) {
+    if (!map) {
+        // Initialize the map if it doesn't exist yet
+        map = L.map('radar-map').setView([lat, lon], 7);
+        
+        // Add a basic street map underneath the radar
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            className: 'map-base-layer'
+        }).addTo(map);
+
+        // Add the official NOAA MRMS Base Reflectivity WMS Layer on top
+        L.tileLayer.wms('https://mapservices.weather.noaa.gov/eventdriven/services/radar/radar_base_reflectivity/MapServer/WMSServer', {
+            layers: '0', 
+            format: 'image/png',
+            transparent: true,
+            opacity: 0.65, // Slightly see-through so streets remain visible
+            attribution: 'NOAA / NWS'
+        }).addTo(map);
+    } else {
+        // If the map already exists, just pan to the new searched location
+        map.setView([lat, lon], 7);
+    }
+}
+
 // --- UI Rendering Functions ---
 
 function renderAlerts(alerts) {
