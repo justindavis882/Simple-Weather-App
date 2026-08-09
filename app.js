@@ -62,6 +62,37 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+// --- PWA Installation Logic ---
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+
+// The browser fires this when the PWA is ready to be installed
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the default browser install UI from showing
+    e.preventDefault();
+    // Save the event so it can be triggered later
+    deferredPrompt = e;
+    // Reveal your custom install button
+    installBtn.classList.remove('hidden');
+});
+
+installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    
+    // Show the native OS installation prompt
+    deferredPrompt.prompt();
+    
+    // Wait for the user to accept or dismiss the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+        installBtn.classList.add('hidden');
+    }
+    
+    // The prompt event can only be used once, so clear it
+    deferredPrompt = null;
+});
+
 // 2. Event Listeners for Location Data
 getLocBtn.addEventListener('click', () => {
     if (!navigator.geolocation) {
@@ -194,7 +225,29 @@ function handleLocationError(error) {
 // 4. UI Rendering Functions
 function renderAlerts(alerts) {
     alertsContainer.innerHTML = '';
+    
+    // 1. Clear the badge if there are no alerts
+    if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge().catch(console.error);
+    }
+    
     if (!alerts || alerts.length === 0) return;
+    
+    // 2. Set the badge number to the total amount of active alerts
+    if ('setAppBadge' in navigator) {
+        navigator.setAppBadge(alerts.length).catch(console.error);
+    }
+
+    // 3. Check if any alert is a severe "Warning"
+    const hasSevereWarning = alerts.some(alert => 
+        alert.properties.event.toLowerCase().includes('warning')
+    );
+
+    // If there is a warning and the device supports vibration, pulse the motor
+    if (hasSevereWarning && 'vibrate' in navigator) {
+        // Vibration pattern: 500ms on, 250ms off, 500ms on
+        navigator.vibrate([500, 250, 500]);
+    }
     
     alertsContainer.innerHTML = alerts.map(alert => `
         <div class="alert">
