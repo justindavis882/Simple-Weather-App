@@ -167,15 +167,14 @@ async function fetchWeatherData(position) {
         refreshBtn.textContent = 'GPS';    
 
         renderAlerts(alertsData.features);
-        
-        // NEW: Pass the location name and coordinates to the current weather card
         renderCurrentWeather(dailyData.properties.periods[0], locationName, lat, lon);
-        
         renderHourly(hourlyData.properties.periods.slice(0, 24)); 
         renderDaily(dailyData.properties.periods);
         
-        // Step 4: Render/Update the Live Radar
         updateRadar(lat, lon);
+        
+        // NEW: Fetch and render tides in the background
+        fetchTides(lat, lon);
 
     } catch (error) {
         console.error(error);
@@ -290,4 +289,79 @@ function renderCurrentWeather(period, locationName, lat, lon) {
             <img src="${period.icon}" alt="${period.shortForecast}" style="width: 85px; height: 85px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
         </div>
     `;
+}
+
+// --- Tide API Functions ---
+
+// 1. Calculate distance between two coordinates (Haversine formula)
+function getDistanceInMiles(lat1, lon1, lat2, lon2) {
+    const R = 3958.8; // Radius of the earth in miles
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+// 2. Fetch the tides
+async function fetchTides(lat, lon) {
+    const tidesContainer = document.getElementById('tides-container');
+    const tidesList = document.getElementById('tides-list');
+    const tideStationName = document.getElementById('tide-station-name');
+
+    try {
+        // Step A: Get the master list of all NOAA tide stations
+        const stationRes = await fetch('https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions');
+        const stationData = await stationRes.json();
+        
+        // Step B: Find the closest station to our coordinates
+        let closestStation = null;
+        let shortestDistance = Infinity;
+
+        stationData.stations.forEach(station => {
+            const distance = getDistanceInMiles(lat, lon, station.lat, station.lng);
+            if (distance < shortestDistance) {
+                shortestDistance = distance;
+                closestStation = station;
+            }
+        });
+
+        // Step C: If the closest station is more than 30 miles away, we are likely inland. Hide the widget.
+        if (shortestDistance > 30) {
+            tidesContainer.classList.add('hidden');
+            return;
+        }
+
+        // Step D: Fetch today's High/Low predictions for the closest station
+        // interval=hilo specifically asks for just the High and Low tide events
+        const tideRes = await fetch(`https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?date=today&station=${closestStation.id}&product=predictions&datum=MLLW&time_zone=lst_ldt&interval=hilo&units=english&application=${encodeURIComponent(APP_IDENTIFIER)}&format=json`);
+        const tideData = await tideRes.json();
+
+        if (tideData.predictions) {
+            tidesContainer.classList.remove('hidden');
+            tideStationName.textContent = `Tides: ${closestStation.name}`;
+            
+            tidesList.innerHTML = tideData.predictions.map(pred => {
+                // Parse the time string (e.g., "2026-08-08 14:30") into a readable format
+                const tideTime = new Date(pred.t.replace(/-/g, '/')).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                const isHigh = pred.type === 'H';
+                
+                return `
+                    <div class="tide-row">
+                        <div class="tide-type">${isHigh ? 'High Tide' : 'Low Tide'}</div>
+                        <div class="tide-time">${tideTime}</div>
+                        <div class="tide-height">${pred.v} ft</div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            tidesContainer.classList.add('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error fetching tides:', error);
+        tidesContainer.classList.add('hidden'); // Fail silently so it doesn't break the weather app
+    }
 }

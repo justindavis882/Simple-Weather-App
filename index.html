@@ -245,6 +245,19 @@
             font-weight: bold;
         }
         .save-loc-btn:active { background: rgba(197, 151, 157, 0.2); }
+
+        /* Tides Styling */
+        .tide-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .tide-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .tide-type { font-weight: bold; font-size: 1.1rem; color: var(--color-text-light); }
+        .tide-time { color: rgba(255, 255, 255, 0.8); }
+        .tide-height { font-weight: bold; color: var(--color-warning); }
     </style>
 </head>
 <body>
@@ -273,6 +286,12 @@
             
             <!-- NEW: Today's Weather -->
             <div id="current-weather-container" class="section-card"></div>
+
+            <!-- NEW: Tides Section -->
+            <div id="tides-container" class="section-card hidden">
+                <h2 id="tide-station-name">Local Tides</h2>
+                <div id="tides-list"></div>
+            </div>
             
             <!-- Existing Radar -->
             <div class="section-card">
