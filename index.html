@@ -175,6 +175,40 @@
         }
 
         .hidden { display: none !important; }
+
+        /* Alert Close Button */
+        .alert { 
+            position: relative; /* Required for absolute positioning of the button */
+            background-color: var(--color-warning); 
+            color: var(--color-text-dark); 
+            padding: 16px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .close-alert {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border: none;
+            color: var(--color-text-dark);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .close-alert:active {
+            background: rgba(0, 0, 0, 0.25);
+        }
     </style>
 </head>
 <body>
@@ -193,14 +227,17 @@
         
     <main>
         <button id="getLocationBtn" class="primary-btn">Load My Weather</button>
-        
+
         <div id="weather-container" class="hidden">
+            <!-- Alerts -->
             <div id="alerts-container"></div>
             
-            <!-- New Radar Section -->
+            <!-- NEW: Today's Weather -->
+            <div id="current-weather-container" class="section-card"></div>
+            
+            <!-- Existing Radar -->
             <div class="section-card">
                 <h2>Live Radar</h2>
-                <!-- Leaflet needs a defined height to render -->
                 <div id="radar-map" style="height: 300px; border-radius: 12px; z-index: 1;"></div>
             </div>
             

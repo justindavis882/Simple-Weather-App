@@ -124,6 +124,10 @@ async function fetchWeatherData(position) {
         refreshBtn.textContent = 'GPS';    
 
         renderAlerts(alertsData.features);
+        
+        // NEW: Grab the very first period from the daily forecast (Current conditions)
+        renderCurrentWeather(dailyData.properties.periods[0]);
+        
         renderHourly(hourlyData.properties.periods.slice(0, 24)); 
         renderDaily(dailyData.properties.periods);
         
@@ -152,7 +156,8 @@ function renderAlerts(alerts) {
     
     alertsContainer.innerHTML = alerts.map(alert => `
         <div class="alert">
-            <strong>${alert.properties.event}</strong>
+            <button class="close-alert" onclick="this.parentElement.style.display='none'">&times;</button>
+            <strong style="padding-right: 30px;">${alert.properties.event}</strong>
             <span style="font-size: 0.9em; display: block; margin-top: 4px;">${alert.properties.headline}</span>
         </div>
     `).join('');
@@ -218,4 +223,19 @@ function updateRadar(lat, lon) {
     setTimeout(() => {
         map.invalidateSize();
     }, 100);
+}
+
+function renderCurrentWeather(period) {
+    const currentContainer = document.getElementById('current-weather-container');
+    
+    currentContainer.innerHTML = `
+        <h2 style="margin-bottom: 8px;">${period.name}</h2>
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <div style="font-size: 3.5rem; font-weight: bold; line-height: 1;">${period.temperature}&deg;${period.temperatureUnit}</div>
+                <div style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.8); margin-top: 8px;">${period.shortForecast}</div>
+            </div>
+            <img src="${period.icon}" alt="${period.shortForecast}" style="width: 85px; height: 85px; border-radius: 50%; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+        </div>
+    `;
 }
