@@ -1,5 +1,5 @@
-const CACHE_NAME = 'weather-pwa';
-const DATA_CACHE_NAME = 'weather-data';
+const CACHE_NAME = 'weather-pwa-v1';
+const DATA_CACHE_NAME = 'weather-data-v1';
 
 // The core files needed to load the UI
 const STATIC_ASSETS = [
