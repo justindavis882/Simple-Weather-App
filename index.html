@@ -35,10 +35,11 @@
         * { box-sizing: border-box; }
 
         /* App Header */
+        /* App Header - Mobile Optimized */
         header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 12px;
             background-color: var(--color-side);
             padding: 16px 20px;
             position: sticky;
@@ -47,29 +48,58 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
 
-        header h1 {
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .header-top h1 {
             margin: 0;
             font-size: 1.25rem;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
 
-        .refresh-btn {
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-search {
+            display: flex;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .header-search input {
+            flex: 1; /* Allows the input to stretch and fill the row */
+            padding: 10px; 
+            border-radius: 8px; 
+            border: none; 
+            outline: none; 
+            background: rgba(255,255,255,0.1); 
+            color: white;
+        }
+
+        .icon-btn {
             background-color: transparent;
             color: var(--color-text-light);
             border: 1px solid rgba(255, 255, 255, 0.4);
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
+            font-size: 1.1rem;
             transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .refresh-btn:active {
+        .icon-btn:active {
             background-color: rgba(255, 255, 255, 0.1);
         }
-
         /* Main Layout */
         main {
             padding: 20px;
@@ -290,15 +320,21 @@
 <body>
     
     <header>
-        <h1>Simple Weather</h1>
-        <div style="display: flex; gap: 8px;">
-            <input type="text" id="locationInput" placeholder="City, State or Zip" 
-                style="padding: 8px; border-radius: 8px; border: none; outline: none; background: rgba(255,255,255,0.1); color: white; width: 140px;">
-            <button id="searchBtn" class="refresh-btn">Search</button>
-            <button id="refreshBtn" class="refresh-btn hidden">GPS</button>
-            <button id="testAlertBtn" class="refresh-btn">Test Alert</button>
-            <!-- NEW: Install Button -->
-            <button id="installBtn" class="refresh-btn hidden" style="background: rgba(255,255,255,0.2);">Install App</button>
+        <!-- Top Row: Title & Action Buttons -->
+        <div class="header-top">
+            <h1>Simple Weather</h1>
+            <div class="header-actions">
+                <!-- Swapped text for icons to save space -->
+                <button id="refreshBtn" class="icon-btn hidden" aria-label="GPS">📍</button>
+                <button id="testAlertBtn" class="icon-btn" aria-label="Test Alert">⚡</button>
+                <button id="installBtn" class="icon-btn hidden" aria-label="Install App" style="background: rgba(255,255,255,0.2);">📥</button>
+            </div>
+        </div>
+        
+        <!-- Bottom Row: Full-width Search Bar -->
+        <div class="header-search">
+            <input type="text" id="locationInput" placeholder="City, State or Zip">
+            <button id="searchBtn" class="icon-btn" aria-label="Search">🔍</button>
         </div>
     </header>
         
